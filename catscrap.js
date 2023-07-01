@@ -6,13 +6,16 @@ const main = async () => {
   const json = await csv()
     .fromFile('./data/catmapping.csv')
 
-  const concurrencyLimit = 5
+  // const concurrencyLimit = 5
 
-  for (let i = 0; i < json.length; i += concurrencyLimit) {
-    const batchJson = json.slice(i, i + concurrencyLimit);
-    const promises = batchJson.map(catObj => scrapCategories(catObj));
-    await Promise.all(promises);
-  }
+  // for (let i = 0; i < json.length; i += concurrencyLimit) {
+  //   const batchJson = json.slice(i, i + concurrencyLimit);
+  //   const promises = batchJson.map(catObj => scrapCategories(catObj));
+  //   await Promise.all(promises);
+  // }
+  //
+
+  await scrapCategories(json[0])
 
 }
 
@@ -38,7 +41,7 @@ const scrapCategories = (catObj) => {
         const productInfo = pdRes.basicInfo;
         let catSlug = `${productInfo.category.detail[0].name}-${productInfo.category.detail[1].name}-${productInfo.category.detail[2].name}`;
 
-        let shopUrl = product.url.split("/").slice(0, 3).join("/")
+        let shopUrl = product.url.split("/").slice(0, 4).join("/")
 
         let shopInfoAdd = await getShopInfoFromHtml(shopUrl)
 
