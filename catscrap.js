@@ -6,16 +6,13 @@ const main = async () => {
   const json = await csv()
     .fromFile('./data/catmapping.csv')
 
-  // const concurrencyLimit = 5
+  const concurrencyLimit = 5
 
-  // for (let i = 0; i < json.length; i += concurrencyLimit) {
-  //   const batchJson = json.slice(i, i + concurrencyLimit);
-  //   const promises = batchJson.map(catObj => scrapCategories(catObj));
-  //   await Promise.all(promises);
-  // }
-  //
-
-  await scrapCategories(json[0])
+  for (let i = 0; i < json.length; i += concurrencyLimit) {
+    const batchJson = json.slice(i, i + concurrencyLimit);
+    const promises = batchJson.map(catObj => scrapCategories(catObj));
+    await Promise.all(promises);
+  }
 
 }
 
