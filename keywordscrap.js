@@ -29,7 +29,7 @@ const scrapProductbyKeyword = async (keyword) => {
       let productSlug = routes[routes.length - 1];
       let shopDomain = routes[routes.length - 2];
       const shopId = product.shop.shopId.toString();
-      const pdRes = await productScrap(productSlug, shopDomain, shopId);
+      const pdRes = await productScrap(productSlug, shopDomain);
       const productInfo = pdRes.basicInfo;
 
       let catSlug = `${productInfo.category.detail[0].name}-${productInfo.category.detail[1].name}-${productInfo.category.detail[2].name}`;
@@ -53,10 +53,8 @@ const scrapProductbyKeyword = async (keyword) => {
         view_count: parseInt(productInfo.stats.countView)
       };
 
-      console.log(idx);
       console.log(newData);
       scrapResult.push(newData);
-
     };
 
     writeToJson(`./export/result.json`, scrapResult)
