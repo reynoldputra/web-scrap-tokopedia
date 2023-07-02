@@ -15,11 +15,10 @@
     "axios-retry": "^3.5.1",
     "cheerio": "^1.0.0-rc.12",
     "csvtojson": "^2.0.10",
-    "jsdom": "^22.1.0",
+    "jsonrawtoxlsx": "^1.0.8",
     "p-map": "^6.0.0",
     "puppeteer": "^20.7.3",
     "retry-axios": "^3.0.0",
-    "vm2": "^3.9.19",
     "write-json-file": "^5.0.0"
   }
 }

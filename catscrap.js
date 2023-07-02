@@ -1,8 +1,10 @@
 import csv from "csvtojson"
-import { getCatUrl, getDataFromHtml, getShopInfoFromHtml, scrapCatList } from "./lib/catscraplib.js"
+import { getCatUrl, getDataFromHtml, scrapCatList } from "./lib/catscraplib.js"
 import { productScrap } from "./lib/scrap.js"
 import { writeToJson } from "./lib/write.js"
 import pMap from "p-map"
+import * as fs from "fs"
+import jsonrawtoxlsx from "jsonrawtoxlsx"
 
 const main = async () => {
   const json = await csv()
@@ -10,15 +12,25 @@ const main = async () => {
 
   const catlist = await scrapCatList()
 
-  for(const idx in json) {
+  for (const idx in json) {
     await scrapCategories(json[idx], catlist)
   }
 
+  const date = new Date()
+  const fileName = `./export/bykeyword/${date.getDate()}-${date.getMonth()}-${date.getFullYear()}byKeyword.json`
+  const fileNameX = `./export/bykeyword/${date.getDate()}-${date.getMonth()}-${date.getFullYear()}byKeyword.xlsx`
+  console.log("write excel")
+  fs.readFile(fileName, 'utf8', (err, data) => {
+    const json = JSON.parse(data)
+    const bufferExcel = jsonrawtoxlsx(json)
+    fs.writeFileSync(fileNameX, bufferExcel, 'binary')
+  })
 }
 
 const scrapCategories = (catObj, catlist) => {
   const cat = [catObj.cat1_id, catObj.cat2_id, catObj.cat3_id]
-  const catSlug = cat.join("-")
+  const date = new Date()
+  const fileName = `./export/bycat/${date.getDate()}-${date.getMonth()}-${date.getFullYear()}byCat.json`
   return new Promise(async (resolve) => {
     const catUrl = await getCatUrl(catlist, cat)
     let i = 1;
@@ -34,14 +46,14 @@ const scrapCategories = (catObj, catlist) => {
             allresult.push(result)
         }
         await pMap(allCardsProduct, mapper, { concurrency: allCardsProduct.length })
-        writeToJson(`./export/bycat/${catSlug}.json`, allresult)
+        writeToJson(fileName, allresult)
         console.log(`${catUrl} page ${i} done`)
         i++;
       } catch (err) {
         console.log("Error : ", err)
       }
     }
-    resolve(scrapResult)
+    resolve([])
   })
 
 }
@@ -53,38 +65,8 @@ const scrapCategory = async (product) => {
       const routes = gaKey.split("/");
       let productSlug = routes[routes.length - 1];
       let shopDomain = routes[routes.length - 2];
-      const pdRes = await productScrap(productSlug, shopDomain);
-      if (!pdRes) {
-        console.log("Skipped")
-        reject([])
-      }
-
-      const productInfo = pdRes.basicInfo;
-      let catSlug = `${productInfo.category.detail[0].name}-${productInfo.category.detail[1].name}-${productInfo.category.detail[2].name}`;
-
-      let shopUrl = product.url.split("/").slice(0, 4).join("/")
-
-      let shopInfoAdd = await getShopInfoFromHtml(shopUrl)
-
-      const newData = {
-        cat_slug: catSlug,
-        itemid: product.id.toString(),
-        shopid: productInfo.shopID,
-        product_title: product.name,
-        product_link: product.url,
-        brand: null,
-        store_type: shopInfoAdd.isOfficial,
-        store_name: productInfo.shopName,
-        store_link: shopUrl,
-        store_location: shopInfoAdd.location,
-        price: product.price_int,
-        rating: productInfo.stats.rating,
-        historical_sold: parseInt(productInfo.txStats.countSold),
-        review_count: parseInt(productInfo.stats.countReview),
-        view_count: parseInt(productInfo.stats.countView)
-      };
-
-      console.log(product.name)
+      const newData = await productScrap(productSlug, shopDomain);
+      console.log(newData);
       resolve(newData)
     } catch (err) {
       console.log("Error: ", err)
