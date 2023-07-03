@@ -4,7 +4,7 @@ import { productScrap } from "./lib/scrap.js";
 // import { writeToJson } from "./lib/write.js";
 import pMap from "p-map";
 import * as fs from "fs";
-// import jsonrawtoxlsx from "jsonrawtoxlsx";
+import jsonrawtoxlsx from "jsonrawtoxlsx";
 import { byCategory } from "./task.js";
 import { writeJsonFileSync } from "write-json-file";
 
@@ -28,13 +28,36 @@ const main = async () => {
     });
 
     const mapper = async (idx) => {
-      await scrapCategories({ ...filteredJson[idx], name: categories[item].name }, catlist);
+      let fileToMerge = {
+        files: [],
+      };
+      await scrapCategories(
+        { ...filteredJson[idx], name: categories[item].name },
+        catlist,
+        fileToMerge
+      );
+
+      // merge json
+      console.log("Start merge file", itemName);
+      const jsons = [];
+      for (const idx in fileToMerge.files) {
+        const data = fs.readFileSync(fileToMerge.files[idx], "utf8");
+        const newData = JSON.parse(data);
+        jsons.push(...newData);
+      }
+
+      if (!fs.existsSync(`./export/bycat/res`)) fs.mkdirSync(`./export/bycat/res`);
+      const fileJson = `./export/bycat/res/${itemName}.json`;
+      const fileExcel = `./export/bycat/res/${itemName}.xlsx`;
+
+      writeJsonFileSync(fileJson, jsons);
+      const bufferExcel = jsonrawtoxlsx(jsons);
+      fs.writeFileSync(fileExcel, bufferExcel, "binary");
+      console.log("End merge file", itemName);
     };
 
     // Use pMap to handle concurrency
     await pMap(Object.keys(filteredJson), mapper, { concurrency: 3 });
-
-    if (!fs.existsSync(`${categories[item].name}`)) fs.mkdirSync(`${categories[item].name}`);
 
     // const date = new Date();
     // const fileName = `./export/byCat/${
@@ -53,7 +76,7 @@ const main = async () => {
   }
 };
 
-const scrapCategories = (catObj, catlist) => {
+const scrapCategories = (catObj, catlist, fileToMerge) => {
   const cat = [catObj.cat1_id, catObj.cat2_id, catObj.cat3_id];
   const catSlug = [catObj.cat1, catObj.cat2, catObj.cat3].join("-");
   const date = new Date();
@@ -76,13 +99,15 @@ const scrapCategories = (catObj, catlist) => {
           if (result) allresult.push(result);
         };
         await pMap(allCardsProduct, mapper, {
-          concurrency: allCardsProduct.length
+          concurrency: allCardsProduct.length,
         });
+
         //clear console and print progress
         // process.stdout.write("\x1B[2J\x1B[0f");
         console.log(`${catSlug} page ${i} done` + " ");
         const fileNameSuccess = `${catFolder}/${date.getDate()}-${date.getMonth()}-${date.getFullYear()}byKeyword_page${i}_success.json`;
         writeJsonFileSync(fileNameSuccess, allresult);
+        fileToMerge.files.push(fileNameSuccess);
         i++;
       } catch (err) {
         const fileNameError = `${catFolder}/${date.getDate()}-${date.getMonth()}-${date.getFullYear()}byKeyword_page${i}_error.json`;
