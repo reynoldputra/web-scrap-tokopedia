@@ -19,6 +19,9 @@ const main = async () => {
   // Loop over each category in byCategory object or a specific category
   for (let item in categories) {
     let itemName = categories[item].name;
+    let fileToMerge = {
+      files: [],
+    };
     if (!fs.existsSync(`./export/bycat/${itemName}`)) fs.mkdirSync(`./export/bycat/${itemName}`);
     // filter the JSON entries (from catmapping.csv) based on the current category
     let filteredJson = json.filter((row) => {
@@ -28,37 +31,33 @@ const main = async () => {
     });
 
     const mapper = async (idx) => {
-      let fileToMerge = {
-        files: [],
-      };
       await scrapCategories(
         { ...filteredJson[idx], name: categories[item].name },
         catlist,
         fileToMerge
       );
-
-      // merge json
-      console.log("Start merge file", itemName);
-      const jsons = [];
-      for (const idx in fileToMerge.files) {
-        const data = fs.readFileSync(fileToMerge.files[idx], "utf8");
-        const newData = JSON.parse(data);
-        jsons.push(...newData);
-      }
-
-      if (!fs.existsSync(`./export/bycat/res`)) fs.mkdirSync(`./export/bycat/res`);
-      const fileJson = `./export/bycat/res/${itemName}.json`;
-      const fileExcel = `./export/bycat/res/${itemName}.xlsx`;
-
-      writeJsonFileSync(fileJson, jsons);
-      const bufferExcel = jsonrawtoxlsx(jsons);
-      fs.writeFileSync(fileExcel, bufferExcel, "binary");
-      console.log("End merge file", itemName);
     };
 
     // Use pMap to handle concurrency
     await pMap(Object.keys(filteredJson), mapper, { concurrency: 3 });
 
+    // merge json
+    console.log("Start merge file", itemName);
+    const jsons = [];
+    for (const idx in fileToMerge.files) {
+      const data = fs.readFileSync(fileToMerge.files[idx], "utf8");
+      const newData = JSON.parse(data);
+      jsons.push(...newData);
+    }
+
+    if (!fs.existsSync(`./export/bycat/res`)) fs.mkdirSync(`./export/bycat/res`);
+    const fileJson = `./export/bycat/res/${itemName}.json`;
+    const fileExcel = `./export/bycat/res/${itemName}.xlsx`;
+
+    writeJsonFileSync(fileJson, jsons);
+    const bufferExcel = jsonrawtoxlsx(jsons);
+    fs.writeFileSync(fileExcel, bufferExcel, "binary");
+    console.log("End merge file", itemName);
     // const date = new Date();
     // const fileName = `./export/byCat/${
     //   categories[item].name
@@ -101,6 +100,7 @@ const scrapCategories = (catObj, catlist, fileToMerge) => {
         await pMap(allCardsProduct, mapper, {
           concurrency: allCardsProduct.length,
         });
+        
 
         //clear console and print progress
         // process.stdout.write("\x1B[2J\x1B[0f");

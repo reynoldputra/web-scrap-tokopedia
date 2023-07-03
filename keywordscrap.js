@@ -15,35 +15,36 @@ const main = async () => {
 
   // Loop over each item in the tasks object
   for (let item in tasks) {
+    let fileToMerge = {
+      files: [],
+    };
     if (!fs.existsSync(`./export/bykeyword/${tasks[item].name}`))
       fs.mkdirSync(`./export/bykeyword/${tasks[item].name}`);
     // Loop over each keyword in the current item's list_keywords array
     for (let keyword of tasks[item].list_keywords) {
-      let fileToMerge = {
-        files: [],
-      };
+      console.log("new keyword")
       if (!fs.existsSync(`./export/bykeyword/${tasks[item].name}/${keyword}`))
         fs.mkdirSync(`./export/bykeyword/${tasks[item].name}/${keyword}`);
       await scrapProductbyKeyword(keyword, tasks[item].name, fileToMerge); // Note the second argument here
-
-      // merge json
-      console.log("Start merge file", tasks[item].name);
-      const jsons = [];
-      for (const idx in fileToMerge.files) {
-        const data = fs.readFileSync(fileToMerge.files[idx], "utf8");
-        const newdata = JSON.parse(data);
-        jsons.push(...newdata);
-      }
-
-      if (!fs.existsSync(`./export/bykeyword/res`)) fs.mkdirSync(`./export/bykeyword/res`);
-      const fileJson = `./export/bykeyword/res/${tasks[item].name}.json`;
-      const fileExcel = `./export/bykeyword/res/${tasks[item].name}.xlsx`;
-
-      writeJsonFileSync(fileJson, jsons);
-      const bufferExcel = jsonrawtoxlsx(jsons);
-      fs.writeFileSync(fileExcel, bufferExcel, "binary");
-      console.log("End merge file", tasks[item].name);
     }
+
+    // merge json
+    console.log("Start merge file", tasks[item].name);
+    const jsons = [];
+    for (const idx in fileToMerge.files) {
+      const data = fs.readFileSync(fileToMerge.files[idx], "utf8");
+      const newdata = JSON.parse(data);
+      jsons.push(...newdata);
+    }
+
+    if (!fs.existsSync(`./export/bykeyword/res`)) fs.mkdirSync(`./export/bykeyword/res`);
+    const fileJson = `./export/bykeyword/res/${tasks[item].name}.json`;
+    const fileExcel = `./export/bykeyword/res/${tasks[item].name}.xlsx`;
+
+    writeJsonFileSync(fileJson, jsons);
+    const bufferExcel = jsonrawtoxlsx(jsons);
+    fs.writeFileSync(fileExcel, bufferExcel, "binary");
+    console.log("End merge file", tasks[item].name);
 
     // const date = new Date();
     // const fileName = `./export/bykeyword/${
@@ -81,6 +82,7 @@ const scrapProductbyKeyword = async (keyword, taskName, fileToMerge) => {
           const result = await scrapProduct(product, keyword, i);
           allresult.push(result);
         };
+
         await pMap(products, mapper, { concurrency: 100 });
 
         const fileNameSuccess = `./export/bykeyword/${taskName}/${keyword}/${date.getDate()}-${date.getMonth()}-${date.getFullYear()}byKeyword_page${i}_success.json`;
