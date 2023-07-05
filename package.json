@@ -18,6 +18,7 @@
     "jsonrawtoxlsx": "^1.0.8",
     "p-map": "^6.0.0",
     "puppeteer": "^20.7.3",
+    "python-shell": "^5.0.0",
     "retry-axios": "^3.0.0",
     "write-json-file": "^5.0.0"
   }

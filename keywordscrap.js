@@ -6,6 +6,7 @@ import * as fs from "fs";
 import jsonrawtoxlsx from "jsonrawtoxlsx";
 import { byKeyword } from "./task.js";
 import { writeJsonFileSync } from "write-json-file";
+import { getProductPy } from "./lib/pythonscript.js";
 
 const main = async () => {
   const arg = process.argv[2];
@@ -70,7 +71,7 @@ const scrapProductbyKeyword = async (keyword, taskName, fileToMerge) => {
     while (true) {
       const allresult = [];
       try {
-        const kwRes = await keywordScrap(keyword, i);
+        const kwRes = await getProductPy(keyword, i);
         const kwScrapData = kwRes.data["ace_search_product_v4"];
         if (kwScrapData.header.totalData == 0) {
           resolve([]);
@@ -92,7 +93,7 @@ const scrapProductbyKeyword = async (keyword, taskName, fileToMerge) => {
         i++;
       } catch (err) {
         const fileNameError = `./export/bykeyword/${taskName}/${keyword}/${date.getDate()}-${date.getMonth()}-${date.getFullYear()}byKeyword_page${i}_error.json`;
-        writeJsonFileSync(fileNameSuccess, fileNameError);
+        writeJsonFileSync(fileNameError, allresult);
         console.log("Error : ", err);
       }
     }

@@ -7,11 +7,12 @@ import * as fs from "fs";
 import jsonrawtoxlsx from "jsonrawtoxlsx";
 import { byCategory } from "./task.js";
 import { writeJsonFileSync } from "write-json-file";
+import { getCatListPy } from "./lib/pythonscript.js";
 
 const main = async () => {
   const arg = process.argv[2];
   const json = await csv().fromFile("./data/catmapping.csv");
-  const catlist = await scrapCatList();
+  const catlist = await getCatListPy();
 
   // If an argument is provided, only run for that category
   const categories = arg ? { [arg]: byCategory[arg] } : byCategory;
@@ -23,6 +24,7 @@ const main = async () => {
       files: [],
     };
     if (!fs.existsSync(`./export/bycat/${itemName}`)) fs.mkdirSync(`./export/bycat/${itemName}`);
+
     // filter the JSON entries (from catmapping.csv) based on the current category
     let filteredJson = json.filter((row) => {
       return categories[item].lis_category
@@ -100,7 +102,6 @@ const scrapCategories = (catObj, catlist, fileToMerge) => {
         await pMap(allCardsProduct, mapper, {
           concurrency: allCardsProduct.length,
         });
-        
 
         //clear console and print progress
         // process.stdout.write("\x1B[2J\x1B[0f");
@@ -127,7 +128,7 @@ const scrapCategory = async (product, page) => {
       let productSlug = routes[routes.length - 1];
       let shopDomain = routes[routes.length - 2];
       const newData = await productScrap(productSlug, shopDomain);
-      // console.log(newData);
+      console.log(page, newData.product_link);
       resolve(newData);
     } catch (err) {
       console.log("Error on page ", page, ":", err);
